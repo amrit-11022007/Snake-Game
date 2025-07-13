@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game</title>
+    <style>
+      * {
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 0;
+    margin: 0;
+    user-select: none;
+    overflow: hidden;
+}
+
+.gamearea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: linear-gradient(to bottom right, #0f172a, #1e293b);
+    font-family: 'Segoe UI', sans-serif;
+    width: 100vw;
+}
+
+#grid {
+    display: grid;
+    grid-template-columns: repeat(15, 20px);
+    grid-template-rows: repeat(15, 20px);
+    border: 4px solid black;
+    margin: 10px;
+    background-color: #1e293b;
+    padding: 8px;
+    gap: 1px;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+}
+
+#score, .text {
+    color: white;
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+#reset {
+    background-color: #f43f5e;
+    box-shadow: 0 8px 10px rgba(0,0,0,0.8);
+    height: 60px;
+    width: 200px;
+    border-radius: 4px;
+    outline: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 18px;
+}
+#reset:active {
+    box-shadow: none;
+}
+.cell {
+    width: 20px;
+    height: 20px;
+    background-color: #0f172a;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    width: 210px;
+}
+
+.btns {
+    height: 60px;
+    width: 70px;
+    cursor: pointer;
+    box-shadow: 0 0 12px rgba(255,255,255,0.1);
+    border: none;
+    outline: none;
+    border-radius: 5px;
+    font-size: 20px;
+    transition: background 0.2s;
+    background-color: #0f172a;
+    color: #fff;
+}
+
+.btns:active {
+    background-color: rgba(0, 0, 0, 0.2);
+    box-shadow: none;
+}
+
+
+.buttons .up {
+    grid-column: 2;
+}
+
+.buttons .left {
+    grid-row: 2;
+    grid-column: 1;
+}
+
+.buttons .right {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.buttons .down {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+
+.food {
+    background-color: #f43f5e;
+    transform: scale(1.05);
+    box-shadow: 0 0 6px #10b981a0;
+}
+
+.snake {
+    background-color: green;
+    transform: scale(1.05);
+    box-shadow: 0 0 6px #10b981a0;
+}
+
+.snake-head {
+    background: linear-gradient(to right, #34d399, #059669);
+    transform: scale(1.2);
+    box-shadow: 0 0 8px #34d399;
+}
+
+#gameover {
+    position: absolute;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background-color: #0f172a;
+    box-shadow: 0 8px 10px rgba(0, 0, 0, 0.2);
+    height: 300px;
+    width: 300px;
+    border-radius: 8px;
+    z-index: 10;
+}
+
+    </style>
+</head>
+
+<body>
+    <div class="gamearea">
+        <div id="gameover">
+            <div class="text">Game Over !!</div>
+            <div id="score">Score: 0</div>
+            <button id="reset" onclick="
+            document.getElementById('gameover').style.display = 'none';
+            ">Reset Game</button>
+        </div>
+        <div id="grid"></div>
+        <div class="buttons">
+            <button class="btns up">UP</button>
+            <button class="btns left">Left</button>
+            <button class="btns right">Right</button>
+            <button class="btns down">Down</button>
+        </div>
+    </div>
+</body>
+<script>
+  const grid = document.getElementById("grid");
+const scoreDiv = document.getElementById("score");
+const resetBtn = document.getElementById("reset");
+const gridSize = 15;
+const gameover = document.getElementById('gameover');
+let snake, direction, nextDirection, food, score, game;
+
+function initGame() {
+    grid.innerHTML = "";
+    for (let y = 0; y < gridSize; y++) {
+        for (let x = 0; x < gridSize; x++) {
+            const cell = document.createElement("div");
+            cell.classList.add("cell");
+            cell.setAttribute("data-x", x);
+            cell.setAttribute("data-y", y);
+            grid.appendChild(cell);
+        }
+    }
+
+    snake = [{
+            x: 2,
+            y: 5
+        },
+        {
+            x: 1,
+            y: 5
+        }
+    ];
+    direction = "right";
+    nextDirection = direction;
+    score = 0;
+    scoreDiv.innerHTML = "Score: 0";
+    generateFood();
+    if (game) clearInterval(game);
+    game = setInterval(moveSnake, 200);
+    render();
+}
+
+document.addEventListener("keydown", e => {
+    if (e.key === "ArrowUp" && direction !== "down") {
+        nextDirection = "up";
+    } else if (e.key === "ArrowDown" && direction !== "up") {
+        nextDirection = "down";
+    } else if (e.key === "ArrowLeft" && direction !== "right") {
+        nextDirection = "left";
+    } else if (e.key === "ArrowRight" && direction !== "left") {
+        nextDirection = "right";
+    }
+});
+
+const leftdir = document.querySelector('.left');
+const rightdir = document.querySelector('.right');
+const updir = document.querySelector('.up');
+const downdir = document.querySelector('.down');
+
+leftdir.addEventListener('click', () => {
+    if (nextDirection !== "right") {
+        nextDirection = "left";
+    }
+})
+
+rightdir.addEventListener('click', () => {
+    if (nextDirection !== "left") {
+        nextDirection = "right";
+    }
+})
+
+updir.addEventListener('click', () => {
+    if (nextDirection !== "down") {
+        nextDirection = "up";
+    }
+})
+
+downdir.addEventListener('click', () => {
+    if (nextDirection !== "up") {
+        nextDirection = "down";
+    }
+})
+
+
+function generateFood() {
+    let coord;
+    do {
+        coord = {
+            x: Math.floor(Math.random() * gridSize),
+            y: Math.floor(Math.random() * gridSize)
+        };
+    } while (snake.some(seg => seg.x === coord.x && seg.y === coord.y));
+    food = coord;
+}
+
+
+
+function render() {
+    document.querySelectorAll(".cell").forEach(cell => {
+        cell.classList.remove("snake", "snake-head", "food");
+    });
+
+    for (let i = 0; i < snake.length; i++) {
+        const {
+            x,
+            y
+        } = snake[i];
+        const box = document.querySelector(`[data-x='${x}'][data-y='${y}']`);
+        if (box) {
+            box.classList.add(i === 0 ? "snake-head" : "snake");
+        }
+    }
+
+    const foodBox = document.querySelector(`[data-x='${food.x}'][data-y='${food.y}']`);
+    if (foodBox) foodBox.classList.add("food");
+}
+
+function moveSnake() {
+    direction = nextDirection;
+
+    const head = {
+        ...snake[0]
+    };
+    if (direction === "right") head.x++;
+    else if (direction === "left") head.x--;
+    else if (direction === "up") head.y--;
+    else if (direction === "down") head.y++;
+
+    if (
+        head.x < 0 || head.x >= gridSize ||
+        head.y < 0 || head.y >= gridSize ||
+        snake.some(seg => seg.x === head.x && seg.y === head.y)
+    ) {
+        clearInterval(game);
+        gameover.style.display = "flex"
+        return;
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        scoreDiv.innerHTML = "Score: " + score;
+        generateFood();
+    } else {
+        snake.pop();
+    }
+
+    render();
+}
+
+resetBtn.addEventListener("click", () => initGame());
+
+initGame();
+</script>
+
+</html>
+
+<!-- A 15x15 grid of divs, total 225 divs. having class cell in a container. Snake will be a set of boxes with coordinates. A food will appear randomly anywhere and if it eats it, increase the size. If it hits the wall or itself, kill it. Let player play using both keyboard and defined keys. -->
