@@ -32,7 +32,7 @@ You can play it using your keyboard or touchscreen controls—perfect for both d
 
 1. **Clone this repository:**
     ```sh
-    git clone https://github.com/your-username/snake-game.git
+    git clone https://github.com/amrit-11022007/Snake-Game.git
     ```
 2. **Open `index.html` in your browser.**
 3. **Enjoy!**
